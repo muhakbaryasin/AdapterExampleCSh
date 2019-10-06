@@ -174,20 +174,20 @@ namespace AdapterExampleCSh
 
   class LightFactory
   {
-    public CtrLight CreateLight(string type, string colorName)
+    public CtrLight CreateLight(string vendor, string colorName)
     {
       CtrLight newLight = null;
 
-      if( type.Equals( "A" ) )
+      if( vendor.Equals( "A" ) )
       {
         newLight = new CtrALight( colorName );
       }
-      else if( type.Equals( "B" ) )
+      else if( vendor.Equals( "B" ) )
       {
         newLight = new CtrBLight( colorName );
       }
       else
-        throw new Exception("Pick vendor A or B. Your's - " + type);
+        throw new Exception("Pick vendor A or B. Your's - " + vendor);
 
       return newLight;
     }
