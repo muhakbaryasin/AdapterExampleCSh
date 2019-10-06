@@ -8,8 +8,28 @@ namespace AdapterExampleCSh
     static void Main( string[] args )
     {
       TrafficLightManagerSingleton traffic_light_man = TrafficLightManagerSingleton.GetInstance();
-      traffic_light_man.AddLight("red", new CtrALight("red"));
-      traffic_light_man.AddLight( "green", new CtrBLight( "green" ) );
+
+      LightFactory lightFactory = new LightFactory();
+
+      System.IO.StreamReader file = new System.IO.StreamReader( @"light_config.txt" );
+
+      int counter = 0;
+      string line;
+
+      while( ( line = file.ReadLine() ) != null )
+      {
+        counter++;
+        string [] lightsConfig = line.Trim().Split( '-' );
+        
+        if( lightsConfig.Length != 2 )
+          throw new Exception("Config format. [Light_vendor]-[color_name]. Ex: A-green. Your's " + line);
+
+        traffic_light_man.AddLight( lightFactory.CreateLight( lightsConfig[0], lightsConfig[1] ) );
+      }
+
+      if (counter < 1)
+        throw new Exception( "File is not found or the file doesnt contain a config.");
+      
       traffic_light_man.ManageLights();
     }
   }
@@ -43,7 +63,7 @@ namespace AdapterExampleCSh
 
     protected CtrLight( string colorName)
     {
-      _colorName = colorName;
+      _colorName = colorName.ToUpper();
     }
     
     public string GetColorName()
@@ -62,13 +82,13 @@ namespace AdapterExampleCSh
     public override void Off()
     {
       VendorALight.TurnOff();
-      Console.WriteLine( "Vendor A's ({0}) light is off", GetColorName() );
+      Console.WriteLine( "{0} light (A) is off", GetColorName() );
     }
 
     public override void On()
     {
       VendorALight.TurnOn();
-      Console.WriteLine( "Vendor A's ({0}) light is on", GetColorName() );
+      Console.WriteLine( "{0} light (A) is on", GetColorName() );
     }
   }
 
@@ -79,13 +99,13 @@ namespace AdapterExampleCSh
     public override void Off()
     {
       VendorBLight.TurnLight( false );
-      Console.WriteLine( "Vendor B's ({0}) light is off", GetColorName() );
+      Console.WriteLine( "{0} light (B) is off", GetColorName() );
     }
 
     public override void On()
     {
       VendorBLight.TurnLight( true );
-      Console.WriteLine( "Vendor B's ({0}) light is on", GetColorName() );
+      Console.WriteLine( "{0} light (B) is on", GetColorName() );
     }
   }
 
@@ -101,8 +121,6 @@ namespace AdapterExampleCSh
       _lights = new Dictionary<string, CtrLight>();
 
       _light_names = new List<string>();
-      _light_names.Add( "red" );
-      _light_names.Add( "green" );
     }
 
     public static TrafficLightManagerSingleton GetInstance()
@@ -139,13 +157,40 @@ namespace AdapterExampleCSh
         SwitchLight();
 
         Console.WriteLine("---- delay ----");
+        // simulate delay
         System.Threading.Thread.Sleep(5000);
       }
     }
 
-    public void AddLight(string colorName, CtrLight newLight)
+    public void AddLight( CtrLight newLight)
     {
-      _lights.Add( colorName, newLight );
+      if( _light_names.IndexOf( newLight.GetColorName() ) == -1 )
+        _light_names.Add( newLight.GetColorName() );
+      else throw new Exception("The same color has been registered.");
+
+      _lights.Add( newLight.GetColorName(), newLight );
     }
   }
+
+  class LightFactory
+  {
+    public CtrLight CreateLight(string type, string colorName)
+    {
+      CtrLight newLight = null;
+
+      if( type.Equals( "A" ) )
+      {
+        newLight = new CtrALight( colorName );
+      }
+      else if( type.Equals( "B" ) )
+      {
+        newLight = new CtrBLight( colorName );
+      }
+      else
+        throw new Exception("Pick vendor A or B. Your's - " + type);
+
+      return newLight;
+    }
+  }
+
 }
